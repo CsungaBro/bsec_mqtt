@@ -61,9 +61,11 @@ public:
   int port;
   const char *username;
   const char *password;
+  const char *topic;
   WiFiClient espClient;
   PubSubClient client;
   void reconnect();
+  void publish(const char *payLoad);
   MyMQTT()
   {
 
@@ -83,12 +85,36 @@ public:
     password = STR(MQTT_PASSWORD);
 #endif
     PubSubClient client(espClient);
+    topic = "home/weather/in";
   }
 };
 void MyMQTT::reconnect()
 {
+  // Loop until we're reconnected
+  while (!client.connected())
+  {
+    Serial.print("Attempting MQTT connection...");
+    // Create a random client ID
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    if (client.connect(clientId.c_str(), username, password))
+    {
+      Serial.println("connected");
+    }
+    else
+    {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      delay(5000);
+    }
+  }
 }
 
+void MyMQTT::publish(const char *payLoad)
+{
+  client.publish(topic, payLoad);
+}
 MyMQTT mqtt;
 MyWiFi wifi;
 long lastMsg = 0;
@@ -289,7 +315,7 @@ void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bse
 
   serializeJson(doc, output);
   Serial.println(output);
-  mqtt.client.publish("home/weather/out", output);
+  mqtt.publish(output);
 }
 
 void checkBsecStatus(Bsec2 bsec)
