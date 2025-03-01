@@ -18,7 +18,6 @@ class MyWiFi
 public:
   const char *ssid;
   const char *password;
-  WiFiClass WiFi;
   void setup_wifi();
   MyWiFi()
   {
@@ -62,10 +61,8 @@ public:
   const char *username;
   const char *password;
   const char *topic;
-  WiFiClient espClient;
-  PubSubClient client;
-  void reconnect();
-  void publish(const char *payLoad);
+  void reconnect(PubSubClient &client);
+  void publish(PubSubClient &client, const char *payLoad);
   MyMQTT()
   {
 
@@ -84,11 +81,10 @@ public:
 #ifdef MQTT_PASSWORD
     password = STR(MQTT_PASSWORD);
 #endif
-    PubSubClient client(espClient);
     topic = "home/weather/in";
   }
 };
-void MyMQTT::reconnect()
+void MyMQTT::reconnect(PubSubClient &client)
 {
   // Loop until we're reconnected
   while (!client.connected())
@@ -97,6 +93,9 @@ void MyMQTT::reconnect()
     // Create a random client ID
     String clientId = "ESP8266Client-";
     clientId += String(random(0xffff), HEX);
+    Serial.println(clientId);
+    Serial.println(username);
+    Serial.println(password);
     // Attempt to connect
     if (client.connect(clientId.c_str(), username, password))
     {
@@ -111,9 +110,16 @@ void MyMQTT::reconnect()
   }
 }
 
-void MyMQTT::publish(const char *payLoad)
+void MyMQTT::publish(PubSubClient &client, const char *payLoad)
 {
-  client.publish(topic, payLoad);
+  if (client.connected())
+  {
+    client.publish(topic, payLoad);
+  }
+  else
+  {
+    Serial.print("MQTT not connected, not publishing data");
+  }
 }
 MyMQTT mqtt;
 MyWiFi wifi;
@@ -145,6 +151,8 @@ void setup_bsec();
 
 /* Create an object of the class Bsec2 */
 Bsec2 envSensor;
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 void setup()
 {
@@ -161,7 +169,7 @@ void setup()
 
   wifi.setup_wifi();
 
-  mqtt.client.setServer(mqtt.server, mqtt.port);
+  client.setServer(mqtt.server, mqtt.port);
 }
 
 void loop()
@@ -171,14 +179,14 @@ void loop()
     checkBsecStatus(envSensor);
   }
 
-  if (!WiFi.isConnected())
+  if (WiFi.status() != WL_CONNECTED)
   {
     wifi.setup_wifi();
   }
 
-  if (!mqtt.client.connected())
+  if (!client.connected())
   {
-    mqtt.reconnect();
+    mqtt.reconnect(client);
   }
 }
 
@@ -315,7 +323,7 @@ void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bse
 
   serializeJson(doc, output);
   Serial.println(output);
-  mqtt.publish(output);
+  mqtt.publish(client, output);
 }
 
 void checkBsecStatus(Bsec2 bsec)
