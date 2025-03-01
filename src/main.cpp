@@ -8,45 +8,92 @@
 /* Macros used */
 #define PANIC_LED LED_BUILTIN
 #define ERROR_DUR 100
-
 #define SAMPLE_RATE BSEC_SAMPLE_RATE_LP
 // Macro to read build flags
 #define ST(A) #A
 #define STR(A) ST(A)
 
+class MyWiFi
+{
+public:
+  const char *ssid;
+  const char *password;
+  WiFiClass WiFi;
+  void setup_wifi();
+  MyWiFi()
+  {
 #ifdef WIFI_SSID
-const char *ssid = STR(WIFI_SSID);
+    ssid = STR(WIFI_SSID);
 #endif
 
 #ifdef WIFI_PASSWORD
-const char *password = STR(WIFI_PASSWORD);
+    password = STR(WIFI_PASSWORD);
 #endif
+  }
+};
+void MyWiFi::setup_wifi()
+{
+  delay(10);
+  // We start by connecting to a WiFi network
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  Serial.println(password);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+class MyMQTT
+{
+public:
+  const char *server;
+  int port;
+  const char *username;
+  const char *password;
+  WiFiClient espClient;
+  PubSubClient client;
+  void reconnect();
+  MyMQTT()
+  {
 
 #ifdef MQTT_SERVER
-const char *mqtt_server = STR(MQTT_SERVER);
+    server = STR(MQTT_SERVER);
 #endif
 
 #ifdef MQTT_PORT
-const int mqtt_port = atoi(STR(MQTT_PORT));
+    port = atoi(STR(MQTT_PORT));
 #endif
 
 #ifdef MQTT_USERNAME
-const char *mqtt_username = STR(MQTT_USERNAME);
+    username = STR(MQTT_USERNAME);
 #endif
 
 #ifdef MQTT_PASSWORD
-const char *mqtt_password = STR(MQTT_PASSWORD);
+    password = STR(MQTT_PASSWORD);
 #endif
+    PubSubClient client(espClient);
+  }
+};
+void MyMQTT::reconnect()
+{
+}
 
-WiFiClient espClient;
-PubSubClient client(espClient);
-
+MyMQTT mqtt;
+MyWiFi wifi;
 long lastMsg = 0;
 
 // put function declarations here:
-int myFunction(int, int);
-void setup_wifi();
-void reconnect();
 
 /* Helper functions declarations */
 /**
@@ -70,6 +117,7 @@ void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bse
 
 /* Create an object of the class Bsec2 */
 Bsec2 envSensor;
+
 void setup()
 {
   /* Desired subscription list of BSEC2 outputs */
@@ -127,9 +175,9 @@ void setup()
   Serial.println("BSEC library version " +
                  String(envSensor.version.major) + "." + String(envSensor.version.minor) + "." + String(envSensor.version.major_bugfix) + "." + String(envSensor.version.minor_bugfix));
 
-  setup_wifi();
+  wifi.setup_wifi();
 
-  client.setServer(mqtt_server, mqtt_port);
+  mqtt.client.setServer(mqtt.server, mqtt.port);
 }
 
 void loop()
@@ -139,55 +187,14 @@ void loop()
     checkBsecStatus(envSensor);
   }
 
-  if (!client.connected())
+  if (!WiFi.isConnected())
   {
-    reconnect();
-  }
-}
-
-void setup_wifi()
-{
-  delay(10);
-  // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  Serial.println(password);
-
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
+    wifi.setup_wifi();
   }
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-}
-
-void reconnect()
-{
-  // Loop until we're reconnected
-  while (!client.connected())
+  if (!mqtt.client.connected())
   {
-    Serial.print("Attempting MQTT connection...");
-    // Create a random client ID
-    String clientId = "ESP8266Client-";
-    clientId += String(random(0xffff), HEX);
-    // Attempt to connect
-    if (client.connect(clientId.c_str(), mqtt_username, mqtt_password))
-    {
-      Serial.println("connected");
-    }
-    else
-    {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      delay(5000);
-    }
+    mqtt.reconnect();
   }
 }
 
@@ -274,7 +281,7 @@ void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bse
 
   serializeJson(doc, output);
   Serial.println(output);
-  client.publish("home/weather/out", output);
+  mqtt.client.publish("home/weather/out", output);
 }
 
 void checkBsecStatus(Bsec2 bsec)
