@@ -115,27 +115,13 @@ void checkBsecStatus(Bsec2 bsec);
  */
 void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bsec);
 
+void setup_bsec();
+
 /* Create an object of the class Bsec2 */
 Bsec2 envSensor;
 
 void setup()
 {
-  /* Desired subscription list of BSEC2 outputs */
-  bsecSensor sensorList[] = {
-      BSEC_OUTPUT_IAQ,
-      BSEC_OUTPUT_RAW_TEMPERATURE,
-      BSEC_OUTPUT_RAW_PRESSURE,
-      BSEC_OUTPUT_RAW_HUMIDITY,
-      BSEC_OUTPUT_RAW_GAS,
-      BSEC_OUTPUT_STABILIZATION_STATUS,
-      BSEC_OUTPUT_RUN_IN_STATUS,
-      BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
-      BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
-      BSEC_OUTPUT_STATIC_IAQ,
-      BSEC_OUTPUT_CO2_EQUIVALENT,
-      BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
-      BSEC_OUTPUT_GAS_PERCENTAGE,
-      BSEC_OUTPUT_COMPENSATED_GAS};
 
   Serial.begin(115200);
   Wire.begin();
@@ -145,35 +131,7 @@ void setup()
   while (!Serial)
     delay(10);
 
-  /* Initialize the library and interfaces */
-  if (!envSensor.begin(0x77, Wire))
-  {
-    checkBsecStatus(envSensor);
-  }
-  /*
-   *	The default offset provided has been determined by testing the sensor in LP and ULP mode on application board 3.0
-   *	Please update the offset value after testing this on your product
-   */
-  if (SAMPLE_RATE == BSEC_SAMPLE_RATE_ULP)
-  {
-    envSensor.setTemperatureOffset(TEMP_OFFSET_ULP);
-  }
-  else if (SAMPLE_RATE == BSEC_SAMPLE_RATE_LP)
-  {
-    envSensor.setTemperatureOffset(TEMP_OFFSET_LP);
-  }
-
-  /* Subsribe to the desired BSEC2 outputs */
-  if (!envSensor.updateSubscription(sensorList, ARRAY_LEN(sensorList), SAMPLE_RATE))
-  {
-    checkBsecStatus(envSensor);
-  }
-
-  /* Whenever new data is available call the newDataCallback function */
-  envSensor.attachCallback(newDataCallback);
-
-  Serial.println("BSEC library version " +
-                 String(envSensor.version.major) + "." + String(envSensor.version.minor) + "." + String(envSensor.version.major_bugfix) + "." + String(envSensor.version.minor_bugfix));
+  setup_bsec();
 
   wifi.setup_wifi();
 
@@ -207,6 +165,56 @@ void errLeds(void)
     digitalWrite(PANIC_LED, LOW);
     delay(ERROR_DUR);
   }
+}
+
+void setup_bsec()
+{
+  /* Desired subscription list of BSEC2 outputs */
+  bsecSensor sensorList[] = {
+      BSEC_OUTPUT_IAQ,
+      BSEC_OUTPUT_RAW_TEMPERATURE,
+      BSEC_OUTPUT_RAW_PRESSURE,
+      BSEC_OUTPUT_RAW_HUMIDITY,
+      BSEC_OUTPUT_RAW_GAS,
+      BSEC_OUTPUT_STABILIZATION_STATUS,
+      BSEC_OUTPUT_RUN_IN_STATUS,
+      BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
+      BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
+      BSEC_OUTPUT_STATIC_IAQ,
+      BSEC_OUTPUT_CO2_EQUIVALENT,
+      BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
+      BSEC_OUTPUT_GAS_PERCENTAGE,
+      BSEC_OUTPUT_COMPENSATED_GAS};
+
+  /* Initialize the library and interfaces */
+  if (!envSensor.begin(0x77, Wire))
+  {
+    checkBsecStatus(envSensor);
+  }
+  /*
+   *	The default offset provided has been determined by testing the sensor in LP and ULP mode on application board 3.0
+   *	Please update the offset value after testing this on your product
+   */
+  if (SAMPLE_RATE == BSEC_SAMPLE_RATE_ULP)
+  {
+    envSensor.setTemperatureOffset(TEMP_OFFSET_ULP);
+  }
+  else if (SAMPLE_RATE == BSEC_SAMPLE_RATE_LP)
+  {
+    envSensor.setTemperatureOffset(TEMP_OFFSET_LP);
+  }
+
+  /* Subsribe to the desired BSEC2 outputs */
+  if (!envSensor.updateSubscription(sensorList, ARRAY_LEN(sensorList), SAMPLE_RATE))
+  {
+    checkBsecStatus(envSensor);
+  }
+
+  /* Whenever new data is available call the newDataCallback function */
+  envSensor.attachCallback(newDataCallback);
+
+  Serial.println("BSEC library version " +
+                 String(envSensor.version.major) + "." + String(envSensor.version.minor) + "." + String(envSensor.version.major_bugfix) + "." + String(envSensor.version.minor_bugfix));
 }
 
 void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bsec)
