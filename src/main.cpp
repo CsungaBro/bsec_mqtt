@@ -13,13 +13,16 @@
 #define ST(A) #A
 #define STR(A) ST(A)
 
+// Classes for grouping
+/*WiFi class*/
 class MyWiFi
 {
 public:
   const char *ssid;
   const char *password;
   void setup_wifi();
-  MyWiFi()
+  WiFiClass &wifi;
+  MyWiFi(WiFiClass &w) : wifi(w)
   {
 #ifdef WIFI_SSID
     ssid = STR(WIFI_SSID);
@@ -30,6 +33,7 @@ public:
 #endif
   }
 };
+
 void MyWiFi::setup_wifi()
 {
   delay(10);
@@ -53,6 +57,7 @@ void MyWiFi::setup_wifi()
   Serial.println(WiFi.localIP());
 }
 
+/*MQTT class*/
 class MyMQTT
 {
 public:
@@ -121,9 +126,6 @@ void MyMQTT::publish(PubSubClient &client, const char *payLoad)
     Serial.print("MQTT not connected, not publishing data");
   }
 }
-MyMQTT mqtt;
-MyWiFi wifi;
-long lastMsg = 0;
 
 // put function declarations here:
 
@@ -153,6 +155,10 @@ void setup_bsec();
 Bsec2 envSensor;
 WiFiClient espClient;
 PubSubClient client(espClient);
+
+MyMQTT mqtt;
+MyWiFi wifi(WiFi);
+long lastMsg = 0;
 
 void setup()
 {
