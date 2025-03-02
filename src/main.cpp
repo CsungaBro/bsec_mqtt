@@ -66,9 +66,10 @@ public:
   const char *username;
   const char *password;
   const char *topic;
+  PubSubClient &client;
   void reconnect(PubSubClient &client);
-  void publish(PubSubClient &client, const char *payLoad);
-  MyMQTT()
+  void publish(const char *payLoad);
+  MyMQTT(PubSubClient &c) : client(c)
   {
 
 #ifdef MQTT_SERVER
@@ -115,7 +116,7 @@ void MyMQTT::reconnect(PubSubClient &client)
   }
 }
 
-void MyMQTT::publish(PubSubClient &client, const char *payLoad)
+void MyMQTT::publish(const char *payLoad)
 {
   if (client.connected())
   {
@@ -156,7 +157,7 @@ Bsec2 envSensor;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-MyMQTT mqtt;
+MyMQTT mqtt(client);
 MyWiFi wifi(WiFi);
 long lastMsg = 0;
 
@@ -175,7 +176,7 @@ void setup()
 
   wifi.setup_wifi();
 
-  client.setServer(mqtt.server, mqtt.port);
+  mqtt.client.setServer(mqtt.server, mqtt.port);
 }
 
 void loop()
@@ -190,7 +191,7 @@ void loop()
     wifi.setup_wifi();
   }
 
-  if (!client.connected())
+  if (!mqtt.client.connected())
   {
     mqtt.reconnect(client);
   }
@@ -329,7 +330,7 @@ void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bse
 
   serializeJson(doc, output);
   Serial.println(output);
-  mqtt.publish(client, output);
+  mqtt.publish(output);
 }
 
 void checkBsecStatus(Bsec2 bsec)
