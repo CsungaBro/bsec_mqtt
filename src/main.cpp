@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include <bsec2.h>
 #include "wifi_manager.h"
+#include "mqtt_manager.h"
 
 /* Macros used */
 #define PANIC_LED LED_BUILTIN
@@ -56,9 +57,8 @@ void WifiManager::setup_wifi()
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 } */
-
 /*MQTT class*/
-class MQTTManager
+/* class MQTTManager
 {
 public:
   const char *server;
@@ -127,6 +127,7 @@ void MQTTManager::publish(const char *payLoad)
     Serial.print("MQTT not connected, not publishing data");
   }
 }
+*/
 
 // put function declarations here:
 
@@ -154,15 +155,14 @@ void setup_bsec();
 
 /* Create an object of the class Bsec2 */
 Bsec2 envSensor;
-WiFiClient espClient;
-PubSubClient client(espClient);
 
-MQTTManager mqtt(client);
+MQTTManager mqttManager;
 WifiManager wifiManager;
 long lastMsg = 0;
 
 void setup()
 {
+  mqttManager.init("", -1, "", "", "");
   wifiManager.init("", "");
 
   Serial.begin(115200);
@@ -176,8 +176,6 @@ void setup()
   setup_bsec();
 
   wifiManager.connect();
-
-  mqtt.client.setServer(mqtt.server, mqtt.port);
 }
 
 void loop()
@@ -192,9 +190,9 @@ void loop()
     wifiManager.connect();
   }
 
-  if (!mqtt.client.connected())
+  if (!mqttManager.isConnected())
   {
-    mqtt.reconnect(client);
+    mqttManager.connect();
   }
 }
 
@@ -331,7 +329,7 @@ void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bse
 
   serializeJson(doc, output);
   Serial.println(output);
-  mqtt.publish(output);
+  mqttManager.publishMessage(output);
 }
 
 void checkBsecStatus(Bsec2 bsec)

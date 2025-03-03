@@ -29,6 +29,8 @@ public:
     bool setServer();
 
     void publishMessage(const char *payload);
+
+    bool isConnected();
 };
 
 #endif
