@@ -22,8 +22,6 @@ void MQTTManager::init(
     _username = username;
     _password = password;
     _topic = topic;
-
-    setServer();
 };
 
 bool MQTTManager::setServer()
@@ -82,3 +80,8 @@ void MQTTManager::publishMessage(const char *payload)
         Serial.print("MQTT not connected, not publishing data");
     }
 };
+
+bool MQTTManager::isConnected()
+{
+    return mqttClient.connected();
+}

@@ -59,6 +59,7 @@ void setup()
   setup_bsec();
 
   wifiManager.connect();
+  mqttManager.setServer();
 }
 
 void loop()
