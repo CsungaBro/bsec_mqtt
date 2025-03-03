@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include <secrets.h>
-#include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <bsec2.h>
+#include "wifi_manager.h"
 
 /* Macros used */
 #define PANIC_LED LED_BUILTIN
@@ -15,14 +15,14 @@
 
 // Classes for grouping
 /*WiFi class*/
-class MyWiFi
+/*class W ifiManager
 {
 public:
   const char *ssid;
   const char *password;
   void setup_wifi();
   WiFiClass &wifi;
-  MyWiFi(WiFiClass &w) : wifi(w)
+  WifiManager(WiFiClass &w) : wifi(w)
   {
 #ifdef WIFI_SSID
     ssid = STR(WIFI_SSID);
@@ -34,7 +34,7 @@ public:
   }
 };
 
-void MyWiFi::setup_wifi()
+void WifiManager::setup_wifi()
 {
   delay(10);
   // We start by connecting to a WiFi network
@@ -55,10 +55,10 @@ void MyWiFi::setup_wifi()
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-}
+} */
 
 /*MQTT class*/
-class MyMQTT
+class MQTTManager
 {
 public:
   const char *server;
@@ -69,7 +69,7 @@ public:
   PubSubClient &client;
   void reconnect(PubSubClient &client);
   void publish(const char *payLoad);
-  MyMQTT(PubSubClient &c) : client(c)
+  MQTTManager(PubSubClient &c) : client(c)
   {
 
 #ifdef MQTT_SERVER
@@ -90,7 +90,7 @@ public:
     topic = "home/weather/in";
   }
 };
-void MyMQTT::reconnect(PubSubClient &client)
+void MQTTManager::reconnect(PubSubClient &client)
 {
   // Loop until we're reconnected
   while (!client.connected())
@@ -116,7 +116,7 @@ void MyMQTT::reconnect(PubSubClient &client)
   }
 }
 
-void MyMQTT::publish(const char *payLoad)
+void MQTTManager::publish(const char *payLoad)
 {
   if (client.connected())
   {
@@ -157,12 +157,13 @@ Bsec2 envSensor;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-MyMQTT mqtt(client);
-MyWiFi wifi(WiFi);
+MQTTManager mqtt(client);
+WifiManager wifiManager;
 long lastMsg = 0;
 
 void setup()
 {
+  wifiManager.init("", "");
 
   Serial.begin(115200);
   Wire.begin();
@@ -174,7 +175,7 @@ void setup()
 
   setup_bsec();
 
-  wifi.setup_wifi();
+  wifiManager.connect();
 
   mqtt.client.setServer(mqtt.server, mqtt.port);
 }
@@ -186,9 +187,9 @@ void loop()
     checkBsecStatus(envSensor);
   }
 
-  if (WiFi.status() != WL_CONNECTED)
+  if (!wifiManager.isConnected())
   {
-    wifi.setup_wifi();
+    wifiManager.connect();
   }
 
   if (!mqtt.client.connected())
