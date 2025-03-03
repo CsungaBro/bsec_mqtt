@@ -1,0 +1,84 @@
+#include "mqtt_manager.h"
+
+MQTTManager::MQTTManager() : mqttClient(wifiClient),
+                             _server(nullptr),
+                             _port(-1),
+                             _username(nullptr),
+                             _password(nullptr),
+                             _topic(nullptr)
+
+{
+}
+
+void MQTTManager::init(
+    const char *server,
+    int port,
+    const char *username,
+    const char *password,
+    const char *topic)
+{
+    _server = server;
+    _port = port;
+    _username = username;
+    _password = password;
+    _topic = topic;
+
+    setServer();
+};
+
+bool MQTTManager::setServer()
+{
+    if (_server == nullptr)
+    {
+        Serial.println("MQTT Server not defined");
+        return false;
+    }
+    if (_port == -1)
+    {
+        Serial.println("MQTT Port not defined");
+        return false;
+    }
+    mqttClient.setServer(_server, _port);
+}
+
+bool MQTTManager::connect()
+{
+    // Loop until we're reconnected
+    while (!mqttClient.connected())
+    {
+        Serial.print("Attempting MQTT connection...");
+        // Create a random client ID
+        String clientId = "ESP8266Client-";
+        clientId += String(random(0xffff), HEX);
+        Serial.println(clientId);
+        Serial.println(_username);
+        Serial.println(_password);
+
+        // Attempt to connect
+        if (mqttClient.connect(clientId.c_str(), _username, _password))
+        {
+            Serial.println("connected");
+            return true;
+        }
+        else
+        {
+            Serial.print("failed, rc=");
+            Serial.print(mqttClient.state());
+            delay(5000);
+        }
+    }
+    return false;
+}
+
+void MQTTManager::publishMessage(const char *payload)
+{
+
+    if (mqttClient.connected())
+    {
+        mqttClient.publish(_topic, payload);
+    }
+    else
+    {
+        Serial.print("MQTT not connected, not publishing data");
+    }
+};
