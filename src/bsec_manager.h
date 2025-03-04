@@ -18,13 +18,15 @@ private:
 
     void subscribeSensors();
 
-    void BSECManager::printBSECVerion();
+    void printBSECVerion();
 
     static void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bsec);
 
     void errLeds();
 
 public:
+    BSECManager();
+
     void init(int bsecAdress, int ledAdress);
 
     void checkBsecStatus();

@@ -17,6 +17,7 @@ private:
     PubSubClient mqttClient;
 
 public:
+    MQTTManager();
     void init(
         const char *server,
         int port,
