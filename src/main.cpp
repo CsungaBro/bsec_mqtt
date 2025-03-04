@@ -13,6 +13,15 @@ long lastMsg = 0;
 
 void setup()
 {
+  Serial.begin(115200);
+  Wire.begin();
+  // Led adress here as well
+  pinMode(configManager.getPanicLed(), OUTPUT);
+
+  /* Valid for boards with USB-COM. Wait until the port is open */
+  while (!Serial)
+    delay(10);
+
   wifiManager.init(
       configManager.getWifiSsid(),
       configManager.getWifiPassword());
@@ -27,15 +36,6 @@ void setup()
   bsecManager.init(
       configManager.getBsecAdress(),
       configManager.getPanicLed());
-
-  Serial.begin(115200);
-  Wire.begin();
-  // Led adress here as well
-  pinMode(configManager.getPanicLed(), OUTPUT);
-
-  /* Valid for boards with USB-COM. Wait until the port is open */
-  while (!Serial)
-    delay(10);
 
   wifiManager.connect();
 
