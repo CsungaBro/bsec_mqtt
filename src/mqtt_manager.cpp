@@ -22,7 +22,7 @@ void MQTTManager::init(
     _username = username;
     _password = password;
     _topic = topic;
-};
+}
 
 bool MQTTManager::setServer()
 {
