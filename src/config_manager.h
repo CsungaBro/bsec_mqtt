@@ -14,6 +14,9 @@ private:
     const char *_mqtt_username;
     const char *_mqtt_password;
     const char *_mqtt_topic;
+    int _bsecAdress;
+    int _panicLed;
+    int _errorDur;
 
     WiFiClient wifiClient;
     PubSubClient mqttClient;
@@ -27,7 +30,20 @@ public:
         int mqtt_port,
         const char *mqtt_username,
         const char *mqtt_password,
-        const char *mqtt_topic);
+        const char *mqtt_topic, int bsecAdress,
+        int panicLed,
+        int errorDur);
+
+    const char *getWifiSsid() const;
+    const char *getWifiPassword() const;
+    const char *getMqttServer() const;
+    int getMqttPort() const;
+    const char *getMqttUsername() const;
+    const char *getMqttPassword() const;
+    const char *getMqttTopic() const;
+    int getBsecAdress() const;
+    int getPanicLed() const;
+    int getErrorDur() const;
 };
 
 #endif

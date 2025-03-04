@@ -3,22 +3,35 @@
 #include "wifi_manager.h"
 #include "mqtt_manager.h"
 #include "bsec_manager.h"
+#include "config_manager.h"
 
 MQTTManager mqttManager;
 WifiManager wifiManager;
 BSECManager bsecManager;
+ConfigManager configManager;
 long lastMsg = 0;
 
 void setup()
 {
-  mqttManager.init("", -1, "", "", "");
-  wifiManager.init("", "");
-  bsecManager.init(0, 0);
+  wifiManager.init(
+      configManager.getWifiSsid(),
+      configManager.getWifiPassword());
+
+  mqttManager.init(
+      configManager.getMqttServer(),
+      configManager.getMqttPort(),
+      configManager.getMqttUsername(),
+      configManager.getMqttPassword(),
+      configManager.getMqttTopic());
+
+  bsecManager.init(
+      configManager.getBsecAdress(),
+      configManager.getPanicLed());
 
   Serial.begin(115200);
   Wire.begin();
   // Led adress here as well
-  pinMode(0, OUTPUT);
+  pinMode(configManager.getPanicLed(), OUTPUT);
 
   /* Valid for boards with USB-COM. Wait until the port is open */
   while (!Serial)
