@@ -24,13 +24,8 @@ private:
 public:
     ConfigManager();
     void init(
-        const char *wifi_ssid,
-        const char *wifi_password,
-        const char *mqtt_server,
-        int mqtt_port,
-        const char *mqtt_username,
-        const char *mqtt_password,
-        const char *mqtt_topic, int bsecAdress,
+        const char *mqtt_topic,
+        int bsecAdress,
         int panicLed,
         int errorDur);
 

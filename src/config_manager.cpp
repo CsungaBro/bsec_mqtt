@@ -1,4 +1,5 @@
 #include "config_manager.h"
+#include <Preferences.h>
 
 ConfigManager::ConfigManager() : _wifi_ssid(nullptr),
                                  _wifi_password(nullptr),
@@ -15,27 +16,28 @@ ConfigManager::ConfigManager() : _wifi_ssid(nullptr),
 }
 
 void ConfigManager::init(
-    const char *wifi_ssid,
-    const char *wifi_password,
-    const char *mqtt_server,
-    int mqtt_port,
-    const char *username,
-    const char *mqtt_password,
     const char *mqtt_topic,
     int bsecAdress,
     int panicLed,
     int errorDur)
 {
-    _wifi_ssid = wifi_ssid;
-    _wifi_password = wifi_password;
-    _mqtt_server = mqtt_server;
-    _mqtt_port = mqtt_port;
-    _mqtt_username = username;
-    _mqtt_password = mqtt_password;
+
+    Preferences preferences;
+    preferences.begin("ssid", true);
+    _wifi_ssid = preferences.getString("ssid").c_str();
+    _wifi_password = preferences.getString("password").c_str();
+    preferences.end();
+
+    preferences.begin("mqtt", true);
+    _mqtt_server = preferences.getString("server").c_str();
+    _mqtt_port = preferences.getInt("port");
+    _mqtt_username = preferences.getString("username").c_str();
+    _mqtt_password = preferences.getString("password").c_str();
     _mqtt_topic = mqtt_topic;
     _bsecAdress = bsecAdress;
     _panicLed = panicLed;
     _errorDur = errorDur;
+    preferences.end();
 };
 
 const char *ConfigManager::getWifiSsid() const { return _wifi_ssid; }
