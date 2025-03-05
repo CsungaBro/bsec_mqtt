@@ -22,6 +22,8 @@ void setup()
   while (!Serial)
     delay(10);
 
+  configManager.init("", 0x77, LED_BUILTIN, 100);
+
   wifiManager.init(
       configManager.getWifiSsid(),
       configManager.getWifiPassword());
