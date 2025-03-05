@@ -41,6 +41,7 @@ bool WifiManager::connect()
             return false;
         }
     }
+    Serial.println();
 
     onConnected();
 

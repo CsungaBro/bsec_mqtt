@@ -53,11 +53,6 @@ void setup()
 
 void loop()
 {
-  if (!bsecManager.isRunning())
-  {
-    bsecManager.checkBsecStatus();
-  }
-
   if (!wifiManager.isConnected())
   {
     wifiManager.connect();
@@ -66,5 +61,10 @@ void loop()
   if (!mqttManager.isConnected())
   {
     mqttManager.connect();
+  }
+
+  if (!bsecManager.isRunning())
+  {
+    bsecManager.checkBsecStatus();
   }
 }

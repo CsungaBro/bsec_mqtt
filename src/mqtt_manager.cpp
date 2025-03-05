@@ -36,7 +36,12 @@ bool MQTTManager::setServer()
         Serial.println("MQTT Port not defined");
         return false;
     }
+
     mqttClient.setServer(_server, _port);
+
+    Serial.println("MQTT Server set");
+
+    return true;
 }
 
 bool MQTTManager::connect()
