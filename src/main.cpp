@@ -20,7 +20,11 @@ void setup()
   while (!Serial)
     delay(10);
 
-  configManager.init("home/weather/in", 0x77, LED_BUILTIN, 100);
+  configManager.init(
+      "home/weather/in",
+      0x77,
+      LED_BUILTIN,
+      100);
   // Led adress here as well
   pinMode(configManager.getPanicLed(), OUTPUT);
 
