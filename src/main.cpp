@@ -15,17 +15,24 @@ void setup()
 {
   Serial.begin(115200);
   Wire.begin();
-  // Led adress here as well
-  pinMode(configManager.getPanicLed(), OUTPUT);
 
   /* Valid for boards with USB-COM. Wait until the port is open */
   while (!Serial)
     delay(10);
 
-  configManager.init("", 0x77, LED_BUILTIN, 100);
+  configManager.init("home/weather/in", 0x77, LED_BUILTIN, 100);
+  // Led adress here as well
+  pinMode(configManager.getPanicLed(), OUTPUT);
 
+  Serial.println();
+  Serial.println("Credentials from the main configmanagar");
+  Serial.println(configManager.getWifiSsid());
+  Serial.println(configManager.getWifiPassword());
+  Serial.println();
+
+  const char *aa = configManager.getWifiSsid();
   wifiManager.init(
-      configManager.getWifiSsid(),
+      aa,
       configManager.getWifiPassword());
 
   mqttManager.init(

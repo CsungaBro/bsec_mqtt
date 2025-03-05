@@ -3,23 +3,25 @@
 #include <Arduino.h>
 #include <PubSubClient.h>
 #include <WiFiClient.h>
+#include <Preferences.h>
 
 class ConfigManager
 {
 private:
-    const char *_wifi_ssid;
-    const char *_wifi_password;
-    const char *_mqtt_server;
+    String _wifi_ssid;
+    String _wifi_password;
+    String _mqtt_server;
     int _mqtt_port;
-    const char *_mqtt_username;
-    const char *_mqtt_password;
-    const char *_mqtt_topic;
+    String _mqtt_username;
+    String _mqtt_password;
+    String _mqtt_topic;
     int _bsecAdress;
     int _panicLed;
     int _errorDur;
 
     WiFiClient wifiClient;
     PubSubClient mqttClient;
+    Preferences preferences;
 
 public:
     ConfigManager();

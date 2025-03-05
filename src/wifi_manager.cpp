@@ -70,3 +70,11 @@ void WifiManager::onConnected() const
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
 }
+
+void WifiManager::printCred() const
+{
+    Serial.print("SSID: ");
+    Serial.println(_ssid);
+    Serial.print("Password: ");
+    Serial.println(_password);
+}

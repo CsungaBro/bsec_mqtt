@@ -29,5 +29,7 @@ public:
 
     // Print infos while connected
     void onConnected() const;
+
+    void printCred() const;
 };
 #endif
