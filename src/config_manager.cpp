@@ -29,9 +29,6 @@ void ConfigManager::init(
     _bsecAdress = bsecAdress;
     _panicLed = panicLed;
     _errorDur = errorDur;
-
-    Serial.println("FROM the init config ssid:");
-    Serial.println(_wifi_ssid);
 }
 
 const char *ConfigManager::getWifiSsid() const { return _wifi_ssid.c_str(); }

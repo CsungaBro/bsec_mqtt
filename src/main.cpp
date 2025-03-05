@@ -24,15 +24,8 @@ void setup()
   // Led adress here as well
   pinMode(configManager.getPanicLed(), OUTPUT);
 
-  Serial.println();
-  Serial.println("Credentials from the main configmanagar");
-  Serial.println(configManager.getWifiSsid());
-  Serial.println(configManager.getWifiPassword());
-  Serial.println();
-
-  const char *aa = configManager.getWifiSsid();
   wifiManager.init(
-      aa,
+      configManager.getWifiSsid(),
       configManager.getWifiPassword());
 
   mqttManager.init(
