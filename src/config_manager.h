@@ -1,12 +1,11 @@
 #ifndef CONFIG_MANAGER_H
 #define CONFIG_MANAGER_H
 #include <Arduino.h>
+#include <Preferences.h>
 #include <PubSubClient.h>
 #include <WiFiClient.h>
-#include <Preferences.h>
 
-class ConfigManager
-{
+class ConfigManager {
 private:
     String _wifi_ssid;
     String _wifi_password;
@@ -19,25 +18,23 @@ private:
     int _panicLed;
     int _errorDur;
 
-    WiFiClient wifiClient;
-    PubSubClient mqttClient;
     Preferences preferences;
 
 public:
     ConfigManager();
     void init(
-        const char *mqtt_topic,
+        const char* mqtt_topic,
         int bsecAdress,
         int panicLed,
         int errorDur);
 
-    const char *getWifiSsid() const;
-    const char *getWifiPassword() const;
-    const char *getMqttServer() const;
+    const char* getWifiSsid() const;
+    const char* getWifiPassword() const;
+    const char* getMqttServer() const;
     int getMqttPort() const;
-    const char *getMqttUsername() const;
-    const char *getMqttPassword() const;
-    const char *getMqttTopic() const;
+    const char* getMqttUsername() const;
+    const char* getMqttPassword() const;
+    const char* getMqttTopic() const;
     int getBsecAdress() const;
     int getPanicLed() const;
     int getErrorDur() const;

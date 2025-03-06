@@ -4,8 +4,22 @@
 #include <ArduinoJson.h>
 #include <bsec2.h>
 
-class BSECManager
-{
+class BSECDataContainer {
+private:
+    StaticJsonDocument<256> output;
+    bool isNewData;
+
+    void setOutput(StaticJsonDocument<256> data);
+
+public:
+    BSECDataContainer();
+
+    void init();
+
+    String getOutput();
+};
+
+class BSECManager {
 private:
     float _sampleRate;
     int _panicLed;
@@ -26,6 +40,8 @@ private:
 
 public:
     BSECManager();
+
+    BSECDataContainer bsecDataContainer;
 
     void init(int bsecAdress, int ledAdress);
 

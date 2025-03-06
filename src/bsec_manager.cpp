@@ -1,23 +1,48 @@
 #include "bsec_manager.h"
+BSECDataContainer::BSECDataContainer()
+    : output()
+    , isNewData(false)
+{
+}
 
-BSECManager::BSECManager() : _sampleRate(BSEC_SAMPLE_RATE_LP),
-                             _errorDur(100),
-                             _panicLed(0),
-                             _sensorList(
-                                 {BSEC_OUTPUT_IAQ,
-                                  BSEC_OUTPUT_RAW_TEMPERATURE,
-                                  BSEC_OUTPUT_RAW_PRESSURE,
-                                  BSEC_OUTPUT_RAW_HUMIDITY,
-                                  BSEC_OUTPUT_RAW_GAS,
-                                  BSEC_OUTPUT_STABILIZATION_STATUS,
-                                  BSEC_OUTPUT_RUN_IN_STATUS,
-                                  BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
-                                  BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
-                                  BSEC_OUTPUT_STATIC_IAQ,
-                                  BSEC_OUTPUT_CO2_EQUIVALENT,
-                                  BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
-                                  BSEC_OUTPUT_GAS_PERCENTAGE,
-                                  BSEC_OUTPUT_COMPENSATED_GAS})
+void BSECDataContainer::init()
+{
+}
+
+void BSECDataContainer::setOutput(StaticJsonDocument<256> data)
+{
+    output = data;
+    isNewData = true;
+}
+
+String BSECDataContainer::getOutput()
+{
+
+    String data;
+    serializeJson(output, data);
+    return data;
+}
+
+BSECManager::BSECManager()
+    : _sampleRate(BSEC_SAMPLE_RATE_LP)
+    , _errorDur(100)
+    , _panicLed(0)
+    , _sensorList(
+          { BSEC_OUTPUT_IAQ,
+              BSEC_OUTPUT_RAW_TEMPERATURE,
+              BSEC_OUTPUT_RAW_PRESSURE,
+              BSEC_OUTPUT_RAW_HUMIDITY,
+              BSEC_OUTPUT_RAW_GAS,
+              BSEC_OUTPUT_STABILIZATION_STATUS,
+              BSEC_OUTPUT_RUN_IN_STATUS,
+              BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
+              BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
+              BSEC_OUTPUT_STATIC_IAQ,
+              BSEC_OUTPUT_CO2_EQUIVALENT,
+              BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
+              BSEC_OUTPUT_GAS_PERCENTAGE,
+              BSEC_OUTPUT_COMPENSATED_GAS })
+    , bsecDataContainer()
 {
 }
 
@@ -25,8 +50,7 @@ void BSECManager::init(int bsecAdress, int ledAdress)
 {
     _panicLed = ledAdress;
     /* Initialize the library and interfaces */
-    if (!envSensor.begin(bsecAdress, Wire))
-    {
+    if (!envSensor.begin(bsecAdress, Wire)) {
         checkBsecStatus();
     }
 
@@ -42,11 +66,7 @@ void BSECManager::init(int bsecAdress, int ledAdress)
 
 void BSECManager::printBSECVerion()
 {
-    Serial.println("BSEC library version " +
-                   String(envSensor.version.major) + "." +
-                   String(envSensor.version.minor) + "." +
-                   String(envSensor.version.major_bugfix) + "." +
-                   String(envSensor.version.minor_bugfix));
+    Serial.println("BSEC library version " + String(envSensor.version.major) + "." + String(envSensor.version.minor) + "." + String(envSensor.version.major_bugfix) + "." + String(envSensor.version.minor_bugfix));
 }
 
 /**
@@ -55,23 +75,17 @@ void BSECManager::printBSECVerion()
  */
 void BSECManager::checkBsecStatus()
 {
-    if (envSensor.status < BSEC_OK)
-    {
+    if (envSensor.status < BSEC_OK) {
         Serial.println("BSEC error code : " + String(envSensor.status));
         errLeds(); /* Halt in case of failure */
-    }
-    else if (envSensor.status > BSEC_OK)
-    {
+    } else if (envSensor.status > BSEC_OK) {
         Serial.println("BSEC warning code : " + String(envSensor.status));
     }
 
-    if (envSensor.sensor.status < BME68X_OK)
-    {
+    if (envSensor.sensor.status < BME68X_OK) {
         Serial.println("BME68X error code : " + String(envSensor.sensor.status));
         errLeds(); /* Halt in case of failure */
-    }
-    else if (envSensor.sensor.status > BME68X_OK)
-    {
+    } else if (envSensor.sensor.status > BME68X_OK) {
         Serial.println("BME68X warning code : " + String(envSensor.sensor.status));
     };
 }
@@ -82,12 +96,9 @@ void BSECManager::setTemperatureOffset()
      *	The default offset provided has been determined by testing the sensor in LP and ULP mode on application board 3.0
      *	Please update the offset value after testing this on your product
      */
-    if (_sampleRate == BSEC_SAMPLE_RATE_ULP)
-    {
+    if (_sampleRate == BSEC_SAMPLE_RATE_ULP) {
         envSensor.setTemperatureOffset(TEMP_OFFSET_ULP);
-    }
-    else if (_sampleRate == BSEC_SAMPLE_RATE_LP)
-    {
+    } else if (_sampleRate == BSEC_SAMPLE_RATE_LP) {
         envSensor.setTemperatureOffset(TEMP_OFFSET_LP);
     }
 };
@@ -98,8 +109,7 @@ void BSECManager::subscribeSensors()
     if (!envSensor.updateSubscription(
             _sensorList,
             ARRAY_LEN(_sensorList),
-            _sampleRate))
-    {
+            _sampleRate)) {
         checkBsecStatus();
     }
 };
@@ -113,18 +123,14 @@ void BSECManager::subscribeSensors()
 void BSECManager::newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bsec)
 {
     StaticJsonDocument<160> doc;
-    char output[160];
-    if (!outputs.nOutputs)
-    {
+    if (!outputs.nOutputs) {
         return;
     }
 
     Serial.println("BSEC outputs:\n\tTime stamp = " + String((int)(outputs.output[0].time_stamp / INT64_C(1000000))));
-    for (uint8_t i = 0; i < outputs.nOutputs; i++)
-    {
+    for (uint8_t i = 0; i < outputs.nOutputs; i++) {
         const bsecData output = outputs.output[i];
-        switch (output.sensor_id)
-        {
+        switch (output.sensor_id) {
         case BSEC_OUTPUT_IAQ:
             Serial.println("\tIAQ = " + String(output.signal));
             Serial.println("\tIAQ accuracy = " + String((int)output.accuracy));
@@ -180,8 +186,9 @@ void BSECManager::newDataCallback(const bme68xData data, const bsecOutputs outpu
         }
     }
 
-    serializeJson(doc, output);
-    Serial.println(output);
+    bsecDataContainer.setOutput(doc);
+    // serializeJson(doc, output);
+    // Serial.println(output);
     // mqttManager.publishMessage(output);
 };
 
@@ -190,8 +197,7 @@ void BSECManager::newDataCallback(const bme68xData data, const bsecOutputs outpu
  */
 void BSECManager::errLeds(void)
 {
-    while (1)
-    {
+    while (1) {
         digitalWrite(_panicLed, HIGH);
         delay(_errorDur);
         digitalWrite(_panicLed, LOW);
