@@ -1,21 +1,22 @@
 #include "mqtt_manager.h"
 
-MQTTManager::MQTTManager() : mqttClient(wifiClient),
-                             _server(nullptr),
-                             _port(-1),
-                             _username(nullptr),
-                             _password(nullptr),
-                             _topic(nullptr)
+MQTTManager::MQTTManager()
+    : mqttClient(wifiClient)
+    , _server(nullptr)
+    , _port(-1)
+    , _username(nullptr)
+    , _password(nullptr)
+    , _topic(nullptr)
 
 {
 }
 
 void MQTTManager::init(
-    const char *server,
+    const char* server,
     int port,
-    const char *username,
-    const char *password,
-    const char *topic)
+    const char* username,
+    const char* password,
+    const char* topic)
 {
     _server = server;
     _port = port;
@@ -26,13 +27,11 @@ void MQTTManager::init(
 
 bool MQTTManager::setServer()
 {
-    if (_server == nullptr)
-    {
+    if (_server == nullptr) {
         Serial.println("MQTT Server not defined");
         return false;
     }
-    if (_port == -1)
-    {
+    if (_port == -1) {
         Serial.println("MQTT Port not defined");
         return false;
     }
@@ -47,8 +46,7 @@ bool MQTTManager::setServer()
 bool MQTTManager::connect()
 {
     // Loop until we're reconnected
-    while (!mqttClient.connected())
-    {
+    while (!mqttClient.connected()) {
         Serial.print("Attempting MQTT connection...");
         // Create a random client ID
         String clientId = "ESP8266Client-";
@@ -58,13 +56,10 @@ bool MQTTManager::connect()
         Serial.println(_password);
 
         // Attempt to connect
-        if (mqttClient.connect(clientId.c_str(), _username, _password))
-        {
+        if (mqttClient.connect(clientId.c_str(), _username, _password)) {
             Serial.println("connected");
             return true;
-        }
-        else
-        {
+        } else {
             Serial.print("failed, rc=");
             Serial.print(mqttClient.state());
             delay(5000);
@@ -73,15 +68,14 @@ bool MQTTManager::connect()
     return false;
 }
 
-void MQTTManager::publishMessage(const char *payload)
+void MQTTManager::publishMessage(const JsonDocument& doc)
 {
+    char payload[256];
+    serializeJson(doc, payload, sizeof(payload));
 
-    if (mqttClient.connected())
-    {
+    if (mqttClient.connected()) {
         mqttClient.publish(_topic, payload);
-    }
-    else
-    {
+    } else {
         Serial.print("MQTT not connected, not publishing data");
     }
 };

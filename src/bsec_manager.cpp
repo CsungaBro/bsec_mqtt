@@ -1,48 +1,27 @@
 #include "bsec_manager.h"
-BSECDataContainer::BSECDataContainer()
-    : output()
-    , isNewData(false)
-{
-}
 
-void BSECDataContainer::init()
-{
-}
-
-void BSECDataContainer::setOutput(StaticJsonDocument<256> data)
-{
-    output = data;
-    isNewData = true;
-}
-
-String BSECDataContainer::getOutput()
-{
-
-    String data;
-    serializeJson(output, data);
-    return data;
-}
+BSECManager BSECManager::_instance;
 
 BSECManager::BSECManager()
     : _sampleRate(BSEC_SAMPLE_RATE_LP)
     , _errorDur(100)
     , _panicLed(0)
-    , _sensorList(
-          { BSEC_OUTPUT_IAQ,
-              BSEC_OUTPUT_RAW_TEMPERATURE,
-              BSEC_OUTPUT_RAW_PRESSURE,
-              BSEC_OUTPUT_RAW_HUMIDITY,
-              BSEC_OUTPUT_RAW_GAS,
-              BSEC_OUTPUT_STABILIZATION_STATUS,
-              BSEC_OUTPUT_RUN_IN_STATUS,
-              BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
-              BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
-              BSEC_OUTPUT_STATIC_IAQ,
-              BSEC_OUTPUT_CO2_EQUIVALENT,
-              BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
-              BSEC_OUTPUT_GAS_PERCENTAGE,
-              BSEC_OUTPUT_COMPENSATED_GAS })
-    , bsecDataContainer()
+    , _newDataAvailable(false)
+    , _lastReadingTime(0)
+    , _sensorList { BSEC_OUTPUT_IAQ,
+        BSEC_OUTPUT_RAW_TEMPERATURE,
+        BSEC_OUTPUT_RAW_PRESSURE,
+        BSEC_OUTPUT_RAW_HUMIDITY,
+        BSEC_OUTPUT_RAW_GAS,
+        BSEC_OUTPUT_STABILIZATION_STATUS,
+        BSEC_OUTPUT_RUN_IN_STATUS,
+        BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
+        BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
+        BSEC_OUTPUT_STATIC_IAQ,
+        BSEC_OUTPUT_CO2_EQUIVALENT,
+        BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
+        BSEC_OUTPUT_GAS_PERCENTAGE,
+        BSEC_OUTPUT_COMPENSATED_GAS }
 {
 }
 
@@ -122,10 +101,54 @@ void BSECManager::subscribeSensors()
  */
 void BSECManager::newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bsec)
 {
-    StaticJsonDocument<160> doc;
+    _instance.processData(data, outputs);
+};
+
+/**
+ * @brief : This function toggles the led when a fault was detected
+ */
+void BSECManager::errLeds(void)
+{
+    while (1) {
+        digitalWrite(_panicLed, HIGH);
+        delay(_errorDur);
+        digitalWrite(_panicLed, LOW);
+        delay(_errorDur);
+    }
+}
+
+bool BSECManager::isRunning()
+{
+    return envSensor.run();
+}
+
+bool BSECManager::hasNewData() const
+{
+    return _newDataAvailable;
+};
+unsigned long BSECManager::getLastReadingTime() const
+{
+    return _lastReadingTime;
+};
+String BSECManager::getLastReading()
+{
+    String jsonStr;
+    serializeJson(_lastReadings, jsonStr);
+    return jsonStr;
+}
+
+void BSECManager::setDataCallback(SensorDataCallback callback)
+{
+    _dataCallback = callback;
+}
+
+void BSECManager::processData(const bme68xData data, const bsecOutputs& outputs)
+{
     if (!outputs.nOutputs) {
         return;
     }
+
+    _lastReadings.clear();
 
     Serial.println("BSEC outputs:\n\tTime stamp = " + String((int)(outputs.output[0].time_stamp / INT64_C(1000000))));
     for (uint8_t i = 0; i < outputs.nOutputs; i++) {
@@ -134,15 +157,15 @@ void BSECManager::newDataCallback(const bme68xData data, const bsecOutputs outpu
         case BSEC_OUTPUT_IAQ:
             Serial.println("\tIAQ = " + String(output.signal));
             Serial.println("\tIAQ accuracy = " + String((int)output.accuracy));
-            doc["q"] = output.signal;
-            doc["qa"] = output.accuracy;
+            _lastReadings["q"] = output.signal;
+            _lastReadings["qa"] = output.accuracy;
             break;
         case BSEC_OUTPUT_RAW_TEMPERATURE:
             Serial.println("\tTemperature = " + String(output.signal));
             break;
         case BSEC_OUTPUT_RAW_PRESSURE:
             Serial.println("\tPressure = " + String(output.signal));
-            doc["p"] = output.signal;
+            _lastReadings["p"] = output.signal;
             break;
         case BSEC_OUTPUT_RAW_HUMIDITY:
             Serial.println("\tHumidity = " + String(output.signal));
@@ -152,18 +175,18 @@ void BSECManager::newDataCallback(const bme68xData data, const bsecOutputs outpu
             break;
         case BSEC_OUTPUT_STABILIZATION_STATUS:
             Serial.println("\tStabilization status = " + String(output.signal));
-            doc["st"] = output.signal;
+            _lastReadings["st"] = output.signal;
             break;
         case BSEC_OUTPUT_RUN_IN_STATUS:
             Serial.println("\tRun in status = " + String(output.signal));
-            doc["ost"] = output.signal;
+            _lastReadings["ost"] = output.signal;
             break;
         case BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE:
             Serial.println("\tCompensated temperature = " + String(output.signal));
-            doc["t"] = output.signal;
+            _lastReadings["t"] = output.signal;
             break;
         case BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY:
-            doc["h"] = output.signal;
+            _lastReadings["h"] = output.signal;
             Serial.println("\tCompensated humidity = " + String(output.signal));
             break;
         case BSEC_OUTPUT_STATIC_IAQ:
@@ -186,26 +209,10 @@ void BSECManager::newDataCallback(const bme68xData data, const bsecOutputs outpu
         }
     }
 
-    bsecDataContainer.setOutput(doc);
-    // serializeJson(doc, output);
-    // Serial.println(output);
-    // mqttManager.publishMessage(output);
-};
+    _newDataAvailable = true;
+    _lastReadingTime = millis();
 
-/**
- * @brief : This function toggles the led when a fault was detected
- */
-void BSECManager::errLeds(void)
-{
-    while (1) {
-        digitalWrite(_panicLed, HIGH);
-        delay(_errorDur);
-        digitalWrite(_panicLed, LOW);
-        delay(_errorDur);
+    if (_dataCallback) {
+        _dataCallback(_lastReadings);
     }
-}
-
-bool BSECManager::isRunning()
-{
-    return envSensor.run();
-}
+};
