@@ -19,15 +19,14 @@ private:
     unsigned long _lastReadingTime;
 
     SensorDataCallback _dataCallback;
+    boolean _dataCallbackSet;
 
     void setTemperatureOffset();
     void subscribeSensors();
     void printBSECVerion();
     void errLeds();
 
-    static void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bsec);
-
-    static BSECManager _instance;
+    void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bsec);
 
 public:
     BSECManager();

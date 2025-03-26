@@ -11,6 +11,14 @@ BSECManager bsecManager;
 ConfigManager configManager;
 long lastMsg = 0;
 
+// Function to handle sensor data - will be passed to bsecManager
+void handleSensorData(const JsonDocument& data)
+{
+    // Publish to MQTT
+    Serial.println("Insside handleSensorData callback");
+    mqttManager.publishMessage(data);
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -43,7 +51,7 @@ void setup()
         configManager.getBsecAdress(),
         configManager.getPanicLed());
 
-    bsecManager.setDataCallback(mqttManager.publishMessage);
+    bsecManager.setDataCallback(handleSensorData);
 
     wifiManager.connect();
 

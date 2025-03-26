@@ -74,7 +74,12 @@ void MQTTManager::publishMessage(const JsonDocument& doc)
     serializeJson(doc, payload, sizeof(payload));
 
     if (mqttClient.connected()) {
-        mqttClient.publish(_topic, payload);
+        int res = mqttClient.publish(_topic, payload);
+        if (res) {
+            Serial.println("MQTT data sent");
+        } else {
+            Serial.println("Something went wrong");
+        }
     } else {
         Serial.print("MQTT not connected, not publishing data");
     }

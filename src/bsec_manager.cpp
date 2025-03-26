@@ -1,12 +1,11 @@
 #include "bsec_manager.h"
 
-BSECManager BSECManager::_instance;
-
 BSECManager::BSECManager()
     : _sampleRate(BSEC_SAMPLE_RATE_LP)
     , _errorDur(100)
     , _panicLed(0)
     , _newDataAvailable(false)
+    , _dataCallbackSet(false)
     , _lastReadingTime(0)
     , _sensorList { BSEC_OUTPUT_IAQ,
         BSEC_OUTPUT_RAW_TEMPERATURE,
@@ -101,7 +100,7 @@ void BSECManager::subscribeSensors()
  */
 void BSECManager::newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bsec)
 {
-    _instance.processData(data, outputs);
+    this->processData(data, outputs);
 };
 
 /**
@@ -140,6 +139,7 @@ String BSECManager::getLastReading()
 void BSECManager::setDataCallback(SensorDataCallback callback)
 {
     _dataCallback = callback;
+    _dataCallbackSet = true;
 }
 
 void BSECManager::processData(const bme68xData data, const bsecOutputs& outputs)
@@ -212,6 +212,9 @@ void BSECManager::processData(const bme68xData data, const bsecOutputs& outputs)
     _newDataAvailable = true;
     _lastReadingTime = millis();
 
+    Serial.println("Before the callbacks");
+    Serial.println("Datacallback set: ");
+    Serial.println(_dataCallbackSet);
     if (_dataCallback) {
         _dataCallback(_lastReadings);
     }
